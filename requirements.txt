@@ -1,0 +1,6 @@
+# Phase 2 — camera + OpenCV + YOLO inference proof only.
+# Not the final onion model stack. No FastAPI, React, DB, or reporting packages.
+# Versions pinned to the combination verified on this machine (Python 3.12, CPU torch).
+opencv-python==4.14.0.94
+ultralytics==8.4.145
+numpy==2.5.3
