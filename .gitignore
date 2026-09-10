@@ -23,8 +23,7 @@ wandb/
 
 # Local captures from camera/YOLO proofs
 captures/
-*.jpg
-*.jpeg
+*jpg
 *.png
 *.mp4
 *.avi
