@@ -31,11 +31,15 @@ def main() -> int:
         print(f"ERROR: missing {CLASSES}", file=sys.stderr)
         return 1
 
-    exe = shutil.which("labelImg") or shutil.which("labelImg.exe")
-    if exe:
-        cmd = [exe, str(image_dir), str(CLASSES), str(save_dir)]
-    else:
-        cmd = [sys.executable, "-m", "labelImg", str(image_dir), str(CLASSES), str(save_dir)]
+    scripts = Path(sys.executable).resolve().parent
+    exe = scripts / "labelImg.exe"
+    if not exe.is_file():
+        found = shutil.which("labelImg") or shutil.which("labelImg.exe")
+        exe = Path(found) if found else None
+    if exe is None or not Path(exe).is_file():
+        print("ERROR: labelImg executable not found in this venv.", file=sys.stderr)
+        return 1
+    cmd = [str(exe), str(image_dir), str(CLASSES), str(save_dir)]
 
     print("NOTE: set LabelImg format to YOLO before saving.")
     print("NOTE: do not write labels into data/raw.")
