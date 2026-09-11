@@ -1,4 +1,2 @@
 HEALTHY
 DAMAGED
-undersize
-ROTTEN
