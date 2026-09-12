@@ -19,7 +19,7 @@ if str(_CV) not in sys.path:
 from grading import CLASS_NAMES, grade_onion, summarize_grades
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_WEIGHTS = ROOT / "runs" / "baseline_yolov8n" / "weights" / "best.pt"
+DEFAULT_WEIGHTS = ROOT / "runs" / "fresh_yolov8n_293_final" / "weights" / "best.pt"
 
 
 def load_detector(weights: Path | str | None = None, device: str = "cpu") -> YOLO:

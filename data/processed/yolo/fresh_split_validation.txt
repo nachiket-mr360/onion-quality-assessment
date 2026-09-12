@@ -1,0 +1,16 @@
+seed=42
+keep_images=293
+keep_groups=92
+rebalance=moved onion_sample_d_005 train->test (v3+v4 together)
+counts images train=205 val=44 test=44 total=293
+counts groups train=66 val=13 test=13 total=92
+class train H=86 D=33 R=48 S=38 total=205
+class val H=19 D=9 R=8 S=8 total=44
+class test H=18 D=3 R=19 S=4 total=44
+class TOTAL H=123 D=45 R=75 S=50
+classes_present_train=['HEALTHY', 'DAMAGED', 'ROTTEN', 'SPROUTED']
+classes_present_val=['HEALTHY', 'DAMAGED', 'ROTTEN', 'SPROUTED']
+classes_present_test=['HEALTHY', 'DAMAGED', 'ROTTEN', 'SPROUTED']
+old_split_not_blindly_reused excluded_markers_in_new=[]
+group_leakage=PASS_ZERO
+errors=[]

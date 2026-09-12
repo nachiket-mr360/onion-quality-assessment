@@ -76,7 +76,7 @@ def run(
         return 2
     print("opened", describe_capture(cap))
 
-    weights = ROOT / "runs" / "baseline_yolov8n" / "weights" / "best.pt"
+    weights = ROOT / "runs" / "fresh_yolov8n_293_final" / "weights" / "best.pt"
     if not weights.is_file():
         print(f"ERROR: model unavailable: {weights}", file=sys.stderr)
         cap.release()

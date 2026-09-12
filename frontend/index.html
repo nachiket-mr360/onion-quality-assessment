@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>ONIONVISION — AI-Powered Onion Quality Assessment</title>
+  <link rel="stylesheet" href="/css/app.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <div class="product">ONIONVISION</div>
+        <div class="tag">AI-Powered Onion Quality Assessment</div>
+      </div>
+    </div>
+    <div class="mid searchish">Start a batch inspection · SIH26031 · Smart Automation</div>
+    <div class="right">
+      <span id="cam-head" class="badge" data-state="unknown">Source idle</span>
+      <time id="clock"></time>
+      <div class="team" title="Team FANTASTIC6 — FANTSC are member initials">
+        <span class="team-label">TEAM</span>
+        <span class="fantastic" aria-label="FANTASTIC6">
+          <b>F</b><b>A</b><b>N</b><b>T</b><i>A</i><b>S</b><i>T</i><i>I</i><b>C</b><i>6</i>
+        </span>
+      </div>
+      <div id="status" class="badge" data-state="unknown">Checking…</div>
+    </div>
+  </header>
+
+  <aside class="side">
+    <button class="nav-btn active" data-view="inspect">◉ Live Inspection</button>
+    <button class="nav-btn" data-view="batch">▦ Batch Analysis</button>
+    <button class="nav-btn" data-view="explorer">◎ Quality Explorer</button>
+    <button class="nav-btn" data-view="reports">▤ Reports</button>
+    <button class="nav-btn" data-view="history">◷ Inspection History</button>
+    <button class="nav-btn" data-view="impact">↗ Impact</button>
+    <button class="nav-btn" data-view="tech">⬡ Technology</button>
+    <button class="nav-btn" data-view="notes">ⓘ About</button>
+    <div class="side-foot">
+      <img src="/assets/ex_healthy.jpg" alt=""/>
+      <small>ONIONVISION</small>
+    </div>
+  </aside>
+
+  <main>
+    <!-- LIVE INSPECTION -->
+    <section id="view-inspect" class="view active">
+      <div class="page-title">
+        <h1>Live Onion Inspection</h1>
+        <p>AI-powered onion quality evaluation</p>
+      </div>
+      <div class="grid-inspect">
+        <div class="col-main">
+          <article class="card feed-card">
+            <div class="card-h">
+              <h2>Inspection feed</h2>
+              <span id="cam-pill" class="pill">Source idle</span>
+            </div>
+            <div class="feed-wrap">
+              <video id="cam" playsinline muted></video>
+              <img id="mobile-feed" alt="" hidden/>
+              <canvas id="overlay"></canvas>
+              <div class="scanline" id="scanline"></div>
+            </div>
+            <div class="actions">
+              <button type="button" id="btn-start-cam" class="btn ghost">Start laptop camera</button>
+              <button type="button" id="btn-stop-cam" class="btn ghost">Stop</button>
+              <button type="button" id="btn-mobile" class="btn">Mobile camera / IP Webcam</button>
+              <button type="button" id="btn-change-cam" class="btn ghost" hidden>Change camera</button>
+              <button type="button" id="btn-capture" class="btn primary">Capture image</button>
+              <label class="btn">Upload image<input id="file" type="file" accept="image/*" hidden/></label>
+            </div>
+            <p id="assess-msg" class="msg" hidden></p>
+          </article>
+          <article class="card recent-card">
+            <h2>Recent detections</h2>
+            <div id="recent-body" class="recent-row">
+              <p class="hint">No assessments yet this session.</p>
+            </div>
+          </article>
+        </div>
+        <div class="col-side">
+          <article class="card">
+            <h2>Live results</h2>
+            <div id="selected" class="selected empty">Select a detection</div>
+            <button type="button" id="btn-trace" class="btn ghost" hidden>View details</button>
+            <div id="trace-box" class="trace" hidden></div>
+          </article>
+          <article class="card stats-card">
+            <h2>Batch summary</h2>
+            <div class="donut-wrap">
+              <svg id="donut" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="track" cx="60" cy="60" r="42"/>
+                <circle id="donut-good" class="arc good" cx="60" cy="60" r="42"/>
+              </svg>
+              <div class="donut-label"><strong id="st-total">0</strong><span>onions</span></div>
+            </div>
+            <div class="kpi">
+              <div class="good"><span>GOOD</span><b id="st-good">0</b><small id="st-good-pct">—</small></div>
+              <div class="bad"><span>BAD</span><b id="st-bad">0</b><small id="st-bad-pct">—</small></div>
+              <div class="rev"><span>REVIEW</span><b id="st-rev">0</b><small id="st-rev-pct">—</small></div>
+            </div>
+            <h3>Visible defects</h3>
+            <div id="bars" class="bars"></div>
+          </article>
+          <article class="card">
+            <h2>Quick actions</h2>
+            <div class="actions">
+              <button type="button" id="btn-clear" class="btn primary">Start new batch</button>
+              <button type="button" id="btn-gen-report" class="btn">Generate report</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- BATCH ANALYSIS -->
+    <section id="view-batch" class="view">
+      <article class="card">
+        <h2>Batch quality overview</h2>
+        <dl class="meta" id="batch-meta">
+          <div><dt>Inspection ID</dt><dd id="bm-id">—</dd></div>
+          <div><dt>Timestamp</dt><dd id="bm-ts">—</dd></div>
+          <div><dt>Calibration</dt><dd id="bm-cal">—</dd></div>
+        </dl>
+        <div class="kpi wide">
+          <div><span>Total</span><b id="ba-total">0</b></div>
+          <div class="good"><span>GOOD</span><b id="ba-good">0</b><small id="ba-gp">—</small></div>
+          <div class="bad"><span>BAD</span><b id="ba-bad">0</b><small id="ba-bp">—</small></div>
+          <div class="rev"><span>REVIEW</span><b id="ba-rev">0</b></div>
+        </div>
+        <h3>Quality distribution</h3>
+        <div id="ba-bars" class="bars"></div>
+        <p>Most frequent visible defect: <strong id="ba-top">—</strong></p>
+      </article>
+    </section>
+
+    <!-- EXPLORER -->
+    <section id="view-explorer" class="view">
+      <article class="card">
+        <h2>What does the AI look for?</h2>
+        <p class="hint">Example photographs for education — not live model output.</p>
+        <div class="explorer">
+          <figure class="ex good">
+            <img src="/assets/ex_healthy.jpg" alt="Example healthy onion"/>
+            <figcaption><b>HEALTHY</b> → GOOD<br/>No visible defect detected</figcaption>
+          </figure>
+          <figure class="ex bad">
+            <img src="/assets/ex_damaged.jpg" alt="Example damaged onion"/>
+            <figcaption><b>DAMAGED</b> → BAD<br/>Visible physical damage</figcaption>
+          </figure>
+          <figure class="ex bad">
+            <img src="/assets/ex_rotten.jpg" alt="Example rotten onion"/>
+            <figcaption><b>ROTTEN</b> → BAD<br/>Visible rot detected</figcaption>
+          </figure>
+          <figure class="ex bad">
+            <img src="/assets/ex_sprouted.jpg" alt="Example sprouted onion"/>
+            <figcaption><b>SPROUTED</b> → BAD<br/>Visible sprouting</figcaption>
+          </figure>
+        </div>
+      </article>
+    </section>
+
+    <!-- HISTORY -->
+    <section id="view-history" class="view">
+      <article class="card">
+        <h2>Inspection history</h2>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Time</th><th>Total</th><th>GOOD</th><th>BAD</th><th>GOOD %</th></tr>
+            </thead>
+            <tbody id="hist-body">
+              <tr><td colspan="6" class="empty-row">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="hist-detail" class="hist-detail"></div>
+      </article>
+    </section>
+
+    <!-- REPORTS -->
+    <section id="view-reports" class="view">
+      <article class="card report-now">
+        <h2>Digital quality report</h2>
+        <p class="hint">HTML + JSON from the existing pipeline. PDF is not generated.</p>
+        <dl class="meta">
+          <div><dt>Inspection ID</dt><dd id="rp-id">No inspection report available yet.</dd></div>
+          <div><dt>Time</dt><dd id="rp-ts">—</dd></div>
+          <div><dt>Totals</dt><dd id="rp-tot">—</dd></div>
+        </dl>
+        <div class="actions" id="rp-actions"></div>
+        <h3>Stored reports</h3>
+        <ul id="report-list" class="report-list"></ul>
+      </article>
+    </section>
+
+    <!-- IMPACT -->
+    <section id="view-impact" class="view">
+      <article class="card">
+        <h2>Potential impact</h2>
+        <p class="warn">Simulation only — values are user-defined assumptions, not measured field results.</p>
+        <label>Batch size (kg) <input id="sim-kg" type="range" min="100" max="5000" value="1000"/><output id="sim-kg-o">1000</output></label>
+        <label>Manual sorting loss % <input id="sim-man" type="range" min="0" max="40" value="18"/><output id="sim-man-o">18</output></label>
+        <label>AI-assisted loss % <input id="sim-ai" type="range" min="0" max="40" value="8"/><output id="sim-ai-o">8</output></label>
+        <div class="sim-bars">
+          <div><span>Manual loss</span><div class="hbar"><i id="bar-man"></i></div><b id="sim-man-kg">—</b></div>
+          <div><span>AI-assisted loss</span><div class="hbar"><i id="bar-ai"></i></div><b id="sim-ai-kg">—</b></div>
+        </div>
+        <p>Potential difference (assumption): <strong id="sim-diff">—</strong></p>
+      </article>
+      <article class="card compare">
+        <div>
+          <h3>Traditional visual sorting</h3>
+          <ol>
+            <li>Human observation</li>
+            <li>Subjective decision</li>
+            <li>Inconsistent assessment</li>
+            <li>Manual recording</li>
+          </ol>
+        </div>
+        <div>
+          <h3>AI-assisted inspection</h3>
+          <ol>
+            <li>Camera</li>
+            <li>Onion detection</li>
+            <li>Visible defect class</li>
+            <li>GOOD / BAD + digital record</li>
+          </ol>
+        </div>
+      </article>
+    </section>
+
+    <!-- TECH -->
+    <section id="view-tech" class="view">
+      <article class="card roadmap">
+        <h2>From visible quality to deeper quality intelligence</h2>
+        <div class="road">
+          <div>
+            <h3>Current prototype — RGB</h3>
+            <ul>
+              <li>Visible damage, rot, sprouting, healthy appearance</li>
+              <li>Visual classification and batch statistics</li>
+              <li>Does not observe hidden / internal quality</li>
+            </ul>
+          </div>
+          <div class="future">
+            <h3>Planned — NIR / multispectral</h3>
+            <p>Planned extension for additional spectral information that could support assessment of hidden/internal quality indicators. Not implemented or validated in this prototype.</p>
+          </div>
+          <div>
+            <h3>Future vision</h3>
+            <p>RGB + NIR/multispectral + size + quality rules + digital records → multimodal onion quality intelligence.</p>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- NOTES -->
+    <section id="view-notes" class="view">
+      <article class="card">
+        <h2>Technical notes</h2>
+        <ul>
+          <li>RGB visible-surface assessment only.</li>
+          <li>RGB cannot directly observe hidden/internal onion quality.</li>
+          <li>Physical diameter requires a calibration reference (ArUco preferred).</li>
+          <li>Size does not change GOOD/BAD.</li>
+          <li>Low-confidence results can be marked REVIEW_REQUIRED (a review state, not a third grade).</li>
+          <li>Locked classes: HEALTHY, DAMAGED, ROTTEN, SPROUTED.</li>
+        </ul>
+        <p class="stack">Camera · OpenCV · YOLO · FastAPI · SQLite · HTML/CSS/JS</p>
+      </article>
+    </section>
+  </main>
+  <div id="cam-modal" class="modal" hidden>
+    <div class="modal-card">
+      <h2>Connect mobile camera</h2>
+      <p class="hint">Enter the IP Webcam address. Example: 192.168.0.12:8080 — stream uses /video. Same Wi‑Fi as this laptop. Address is kept only for this session.</p>
+      <label>IP Webcam address
+        <input id="cam-addr" type="text" placeholder="192.168.0.12:8080" autocomplete="off"/>
+      </label>
+      <p id="cam-modal-msg" class="msg" hidden></p>
+      <div class="actions">
+        <button type="button" id="btn-cam-test" class="btn">Test connection</button>
+        <button type="button" id="btn-cam-connect" class="btn primary">Connect</button>
+        <button type="button" id="btn-cam-cancel" class="btn ghost">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

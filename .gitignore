@@ -32,3 +32,7 @@ captures/
 # Environment
 .env
 .env.*
+
+# Local SQLite
+*.db
+*.sqlite
