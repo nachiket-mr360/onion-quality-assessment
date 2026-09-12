@@ -8,6 +8,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 
+README.md/
 # OS / editor
 .DS_Store
 Thumbs.db
