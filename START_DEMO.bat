@@ -3,7 +3,7 @@ cd /d "%~dp0"
 echo.
 echo Onion quality demo
 echo 1. On the phone, start IP Webcam.
-echo 2. Video URL default: http://192.0.0.4:8080/video
+echo 2. Video URL default: http://192.168.167.38:8080/video
 echo 3. Point the camera at onions. SPACE = freeze + report. Q = quit.
 echo.
 if not exist ".venv\Scripts\python.exe" (
