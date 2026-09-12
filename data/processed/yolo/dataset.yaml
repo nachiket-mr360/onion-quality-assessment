@@ -1,7 +1,5 @@
-# Placeholder only. Images and labels are not populated yet.
-# Do not train against this file until Phase 5 is approved.
+path: .
 
-path: data/processed/yolo
 train: images/train
 val: images/val
 test: images/test

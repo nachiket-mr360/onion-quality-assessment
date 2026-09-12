@@ -1,4 +1,0 @@
-HEALTHY
-DAMAGED
-undersize
-ROTTEN
