@@ -19,7 +19,12 @@ Thumbs.db
 *.pt
 *.onnx
 *.engine
-runs/
+runs/*
+!runs/fresh_yolov8n_293_final/
+runs/fresh_yolov8n_293_final/*
+!runs/fresh_yolov8n_293_final/weights/
+runs/fresh_yolov8n_293_final/weights/*
+!runs/fresh_yolov8n_293_final/weights/best.pt
 wandb/
 
 # Local captures from camera/YOLO proofs

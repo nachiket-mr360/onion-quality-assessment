@@ -43,6 +43,46 @@ export function renderBars(el, b) {
   }).join("");
 }
 
+export function drawOverlayBoxes(canvas, source, onions, selectedIdx) {
+  const ctx = canvas.getContext("2d");
+  const wrap = canvas.parentElement;
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  canvas.width = w;
+  canvas.height = h;
+  ctx.clearRect(0, 0, w, h);
+  const iw = source.videoWidth || source.naturalWidth || source.width;
+  const ih = source.videoHeight || source.naturalHeight || source.height;
+  if (!iw || !ih) return;
+  const scale = Math.min(w / iw, h / ih);
+  const dw = iw * scale;
+  const dh = ih * scale;
+  const ox = (w - dw) / 2;
+  const oy = (h - dh) / 2;
+  (onions || []).forEach((o, i) => {
+    const box = o.xyxy;
+    if (!box || box.length < 4) return;
+    const [x1, y1, x2, y2] = box;
+    const x = ox + x1 * scale;
+    const y = oy + y1 * scale;
+    const bw = (x2 - x1) * scale;
+    const bh = (y2 - y1) * scale;
+    const review = String(o.review_state || "").toUpperCase().includes("REVIEW");
+    ctx.strokeStyle = review ? "#c98912" : o.grade === "GOOD" ? "#1f9d5b" : "#d64545";
+    ctx.lineWidth = i === selectedIdx ? 4 : 2;
+    ctx.strokeRect(x, y, bw, bh);
+    const id = "ON-" + String(o.onion_number ?? i + 1).padStart(3, "0");
+    const pct = o.confidence == null ? "" : ` ${Math.round(Number(o.confidence) * 100)}%`;
+    const label = `${id} | ${o.class_name} ${o.grade}${pct}`;
+    ctx.font = "12px Segoe UI";
+    const tw = ctx.measureText(label).width + 8;
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.fillRect(x, Math.max(0, y - 18), tw, 18);
+    ctx.fillStyle = "#fff";
+    ctx.fillText(label, x + 4, Math.max(12, y - 5));
+  });
+}
+
 export function drawDetections(canvas, img, onions, selectedIdx, onSelect) {
   const ctx = canvas.getContext("2d");
   const wrap = canvas.parentElement;

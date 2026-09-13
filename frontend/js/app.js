@@ -1,16 +1,17 @@
-import { assessCamera, assessFile, getBatch, getHealth, listBatches, mediaUrl, snapshotUrl, testCamera } from "./api.js";
+import { assessCamera, assessFile, getBatch, getHealth, listBatches, liveCamera, liveFile, mediaUrl, snapshotUrl, testCamera } from "./api.js?v=live3";
 import {
   breakdown,
   confPct,
   countUp,
   cropOnion,
   drawDetections,
+  drawOverlayBoxes,
   fmtPct,
   fmtSize,
   mostFrequent,
   renderBars,
   setDonut,
-} from "./viz.js";
+} from "./viz.js?v=live3";
 
 const statusEl = document.getElementById("status");
 const msgEl = document.getElementById("assess-msg");
@@ -18,10 +19,13 @@ const video = document.getElementById("cam");
 const canvas = document.getElementById("overlay");
 const recentBody = document.getElementById("recent-body");
 
-let session = { report: null, onions: [], img: null, selected: 0, frameUrl: null };
+let session = { report: null, onions: [], img: null, selected: 0, frameUrl: null, frozen: false };
 let camStream = null;
 let mobileAddress = null;
 let mobilePoll = null;
+let liveTimer = null;
+let liveInFlight = false;
+let liveOnions = [];
 const mobileFeed = document.getElementById("mobile-feed");
 
 function setStatus(state, text) {
@@ -82,6 +86,7 @@ document.getElementById("btn-start-cam").addEventListener("click", async () => {
     video.srcObject = camStream;
     await video.play();
     setCamState("Camera connected", true);
+    startLiveLoop();
   } catch {
     setCamState("Camera unavailable", false);
     showMsg("Camera not available. Use Upload image.", true);
@@ -95,9 +100,15 @@ document.getElementById("btn-stop-cam").addEventListener("click", () => {
     video.srcObject = null;
   }
   stopMobilePreview();
+  stopLiveLoop();
+  liveOnions = [];
   mobileAddress = null;
   document.getElementById("btn-change-cam").hidden = true;
   setCamState("Source idle", false);
+  if (!session.frozen) {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
 });
 
 document.getElementById("btn-capture").addEventListener("click", async () => {
@@ -132,8 +143,25 @@ document.getElementById("file").addEventListener("change", async (e) => {
   if (f) await runAssess(f);
 });
 
+function clearFrozenView() {
+  session.frozen = false;
+  session.img = null;
+  session.frameUrl = null;
+  session.onions = liveOnions.slice();
+  session.selected = 0;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  paintLiveHud();
+  showMsg("");
+}
+
+document.getElementById("btn-clear-image").addEventListener("click", () => {
+  clearFrozenView();
+});
+
 document.getElementById("btn-clear").addEventListener("click", () => {
-  session = { report: null, onions: [], img: null, selected: 0, frameUrl: null };
+  session = { report: null, onions: [], img: null, selected: 0, frameUrl: null, frozen: false };
+  liveOnions = [];
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   paintStats({ total_onions: 0, good_count: 0, bad_count: 0, good_pct: null, bad_pct: null, onions: [] });
@@ -145,6 +173,7 @@ document.getElementById("btn-clear").addEventListener("click", () => {
 });
 
 async function applyReport(report, file) {
+  session.frozen = true;
   session.report = report;
   session.onions = report.onions || [];
   session.selected = 0;
@@ -200,12 +229,16 @@ function loadFrame(url, fallbackFile) {
 }
 
 function redraw() {
-  if (!session.img) return;
-  drawDetections(canvas, session.img, session.onions, session.selected, (i) => {
-    session.selected = i;
-    paintSelected();
-    redraw();
-  });
+  if (session.frozen && session.img) {
+    drawDetections(canvas, session.img, session.onions, session.selected, (i) => {
+      session.selected = i;
+      paintSelected();
+      redraw();
+    });
+    return;
+  }
+  const src = !mobileFeed.hidden ? mobileFeed : video;
+  drawOverlayBoxes(canvas, src, liveOnions, session.selected);
 }
 
 function reviewCount(onions) {
@@ -459,11 +492,22 @@ function startMobilePreview(address) {
   }
   mobileAddress = address;
   mobileFeed.hidden = false;
-  const tick = () => {
+  startLiveLoop();
+  let snapBusy = false;
+  const tickSnap = () => {
+    if (session.frozen || snapBusy || !mobileAddress) return;
+    snapBusy = true;
+    mobileFeed.onload = () => {
+      snapBusy = false;
+      if (!session.frozen) redraw();
+    };
+    mobileFeed.onerror = () => {
+      snapBusy = false;
+    };
     mobileFeed.src = snapshotUrl(address);
   };
-  tick();
-  mobilePoll = setInterval(tick, 700);
+  tickSnap();
+  mobilePoll = setInterval(tickSnap, 250);
   document.getElementById("btn-change-cam").hidden = false;
   setCamState("Mobile camera connected · " + address, true);
 }
@@ -514,6 +558,85 @@ document.getElementById("btn-gen-report").addEventListener("click", () => {
   }
   window.open(href, "_blank", "noopener");
 });
+
+function paintLiveHud() {
+  session.onions = liveOnions;
+  const tot = liveOnions.length;
+  const good = liveOnions.filter((o) => o.grade === "GOOD").length;
+  const bad = liveOnions.filter((o) => o.grade === "BAD").length;
+  paintStats({
+    total_onions: tot,
+    good_count: good,
+    bad_count: bad,
+    good_pct: tot ? (100 * good) / tot : null,
+    bad_pct: tot ? (100 * bad) / tot : null,
+    onions: liveOnions,
+  });
+  paintSelected();
+  paintRecent();
+  redraw();
+}
+
+function stopLiveLoop() {
+  if (liveTimer) {
+    clearInterval(liveTimer);
+    liveTimer = null;
+  }
+}
+
+function startLiveLoop() {
+  stopLiveLoop();
+  liveInFlight = false;
+  liveTimer = setInterval(() => {
+    tickLive();
+  }, 1800);
+  tickLive();
+}
+
+async function tickLive() {
+  if (session.frozen || liveInFlight) return;
+  if (mobileAddress) {
+    liveInFlight = true;
+    try {
+      const data = await liveCamera(mobileAddress);
+      if (session.frozen) return;
+      if (data.busy) {
+        redraw();
+        return;
+      }
+      liveOnions = data.onions || [];
+      paintLiveHud();
+    } catch (err) {
+      console.warn("[oqa] /camera/live", err);
+      if (!session.frozen) redraw();
+    } finally {
+      liveInFlight = false;
+    }
+    return;
+  }
+  if (!(video.srcObject && video.readyState >= 2)) return;
+  liveInFlight = true;
+  try {
+    const c = document.createElement("canvas");
+    c.width = video.videoWidth;
+    c.height = video.videoHeight;
+    c.getContext("2d").drawImage(video, 0, 0);
+    const blob = await new Promise((resolve) => c.toBlob(resolve, "image/jpeg", 0.7));
+    if (!blob) return;
+    const data = await liveFile(new File([blob], "live.jpg", { type: "image/jpeg" }));
+    if (session.frozen) return;
+    if (data.busy) {
+      redraw();
+      return;
+    }
+    liveOnions = data.onions || [];
+    paintLiveHud();
+  } catch {
+    if (!session.frozen) redraw();
+  } finally {
+    liveInFlight = false;
+  }
+}
 
 window.addEventListener("resize", redraw);
 bootHealth();

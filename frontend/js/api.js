@@ -46,6 +46,32 @@ export async function testCamera(address) {
   return data;
 }
 
+export async function liveCamera(address) {
+  const res = await fetch("/camera/live", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ address }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const d = data.detail;
+    throw new Error(typeof d === "string" ? d : (d && d.error) || "Live detection failed");
+  }
+  return data;
+}
+
+export async function liveFile(file) {
+  const fd = new FormData();
+  fd.append("file", file, file.name || "live.jpg");
+  const res = await fetch("/live", { method: "POST", body: fd });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const d = data.detail;
+    throw new Error(typeof d === "string" ? d : (d && d.error) || "Live detection failed");
+  }
+  return data;
+}
+
 export async function assessCamera(address) {
   const res = await fetch("/camera/assess", {
     method: "POST",

@@ -29,7 +29,7 @@ from onion_infer import detect, load_detector
 from pipeline import freeze_assess
 from report import write_report
 
-DEFAULT_URL = os.environ.get("ONION_STREAM_URL", "http://192.168.167.38:8080/video")
+DEFAULT_URL = os.environ.get("ONION_STREAM_URL", "http://192.0.0.4:8080/video")
 GOOD_COLOR = (40, 180, 60)
 BAD_COLOR = (40, 40, 220)
 TEXT = (255, 255, 255)
