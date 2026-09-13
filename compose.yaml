@@ -1,0 +1,18 @@
+services:
+  onionvision:
+    build: .
+    image: onionvision:local
+    ports:
+      - "8000:8000"
+    environment:
+      MODEL_PATH: /app/runs/fresh_yolov8n_293_final/weights/best.pt
+      DATABASE_PATH: /app/data/onion_quality.db
+      REPORT_DIR: /app/captures/reports
+    volumes:
+      - onionvision-data:/app/data
+      - onionvision-reports:/app/captures/reports
+    restart: unless-stopped
+
+volumes:
+  onionvision-data:
+  onionvision-reports:

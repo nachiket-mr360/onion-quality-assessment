@@ -5,6 +5,7 @@ Does not reimplement detection, grading, size, or report math.
 
 from __future__ import annotations
 
+import os
 import sys
 from contextlib import asynccontextmanager
 from urllib.parse import urlparse
@@ -33,9 +34,17 @@ from database import get_batch, initialize_database, list_batches, save_report  
 from onion_infer import load_detector  # noqa: E402
 from pipeline import save_freeze  # noqa: E402
 
-APPROVED_WEIGHTS = ROOT / "runs" / "fresh_yolov8n_293_final" / "weights" / "best.pt"
-REPORT_DIR = ROOT / "captures" / "reports"
-FRONTEND_DIR = ROOT / "frontend"
+def _path_from_env(name: str, default: Path) -> Path:
+    raw = (os.environ.get(name) or "").strip()
+    return Path(raw) if raw else default
+
+
+APPROVED_WEIGHTS = _path_from_env(
+    "MODEL_PATH", ROOT / "runs" / "fresh_yolov8n_293_final" / "weights" / "best.pt"
+)
+REPORT_DIR = _path_from_env("REPORT_DIR", ROOT / "captures" / "reports")
+FRONTEND_DIR = _path_from_env("FRONTEND_DIR", ROOT / "frontend")
+REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 _state: dict[str, Any] = {
     "model": None,

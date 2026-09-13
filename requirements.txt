@@ -1,10 +1,12 @@
-# Phase 2 — camera + OpenCV + YOLO inference proof only.
-# Phase 4 — local LabelImg for YOLO detection annotation (not training).
-# Phase 9 — thin FastAPI wrapper. No React, no DB.
-# Versions pinned to the combination verified on this machine (Python 3.12, CPU torch).
+# Runtime — ONIONVISION FastAPI + YOLOv8 (Python 3.12, CPU).
+# Versions match the verified local stack where pinned.
 opencv-python==4.14.0.94
 ultralytics==8.4.145
 numpy==2.5.3
-labelImg==1.8.6
 fastapi
 uvicorn[standard]
+python-multipart
+pydantic
+
+# Local annotation only (not used by the API; omit in Docker):
+# labelImg==1.8.6

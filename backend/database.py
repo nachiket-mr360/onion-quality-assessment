@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
-DB_PATH = ROOT / "data" / "onion_quality.db"
+_db_env = (os.environ.get("DATABASE_PATH") or "").strip()
+DB_PATH = Path(_db_env) if _db_env else ROOT / "data" / "onion_quality.db"
 
 
 def _connect(path: Path | None = None) -> sqlite3.Connection:

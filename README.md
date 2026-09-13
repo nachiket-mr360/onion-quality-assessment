@@ -974,6 +974,63 @@ Real-world field validation and broader dataset expansion remain future steps.
 
 ---
 
+## Docker Deployment
+
+Containerizes the **existing** FastAPI app. Same model, SQLite, and HTML frontend. No extra services.
+
+### Prerequisites
+
+- Docker Desktop (or Docker Engine)
+- This repository **including** `runs/fresh_yolov8n_293_final/weights/best.pt` on the build machine (the image copies that file)
+
+### Build
+
+```bat
+docker build -t onionvision:local .
+```
+
+### Run
+
+```bat
+docker run --rm -p 8000:8000 -v onionvision-data:/app/data -v onionvision-reports:/app/captures/reports onionvision:local
+```
+
+### Docker Compose
+
+```bat
+docker compose up --build
+```
+
+Compose persists SQLite at `/app/data` and reports at `/app/captures/reports`.
+
+### URLs
+
+| | |
+|--|--|
+| Application | http://127.0.0.1:8000/ |
+| OpenAPI docs | http://127.0.0.1:8000/docs |
+| Health | http://127.0.0.1:8000/health |
+
+### Persistence
+
+- **SQLite:** `DATABASE_PATH` default `/app/data/onion_quality.db` — mount `/app/data`
+- **Reports (HTML/JSON/frames):** `REPORT_DIR` default `/app/captures/reports` — mount `/app/captures/reports`
+
+Local non-Docker defaults are unchanged (`data/onion_quality.db`, `captures/reports/`).
+
+### Model
+
+Default `MODEL_PATH=/app/runs/fresh_yolov8n_293_final/weights/best.pt` (baked into the image). Optional override if you mount another `best.pt`. Do not substitute a different architecture or retrain for deploy.
+
+### Camera / IP Webcam in Docker
+
+- **Same LAN as the container host:** the existing IP Webcam UI can work if the phone is reachable from the container (host network / published ports do not magically expose `192.168.x.x` the other way).
+- **Public cloud:** a phone’s private `192.168.x.x` address is **not** reachable from the cloud container. Use **Upload image** there. This is not WebRTC; the feature is unchanged.
+
+Optional env vars (local run does **not** require a `.env`): `MODEL_PATH`, `DATABASE_PATH`, `REPORT_DIR`.
+
+---
+
 ## License
 
 This project was developed as a Smart India Hackathon prototype by **FANTASTIC6**.
