@@ -23,6 +23,7 @@ ONIONVISION addresses this gap by introducing an **AI-assisted, explainable and 
 ---
 
 # 💡 Our Solution
+Demo link: https://onion-quality-assessment.onrender.com/
 
 ONIONVISION transforms the inspection process from:
 
@@ -33,7 +34,225 @@ Manual Visual Judgement
    ↓
 Quality Decision
    ↓
-Manual Record
+PHASE 6 — MODEL TRAINING
+FULL TAKEOVER AFTER PREVIOUS AI CREDITS ENDED
+
+Repository:
+C:\College\SIH2
+
+A previous coding AI was implementing Phase 6 but its credits ended and the laptop restarted before completion.
+
+IMPORTANT:
+Take over the CURRENT filesystem.
+Do not assume the previous Phase 6 run completed.
+Do not assume its artifacts are valid.
+Inspect what exists, then COMPLETE Phase 6 from the committed Phase 5 state.
+
+PHASES 1–5 ARE COMPLETE AND COMMITTED.
+
+Phase 5 input:
+dataset/votv_thunderstorm_nowcast_2014_2025.csv
+
+Phase 5 contains:
+- 28 causal atmospheric/temporal model features
+- genuine VOTV thunderstorm observations
+- target_1h
+- target_2h
+- target_3h
+- target observation flags
+
+Genuine target definitions:
+
+target_1h(t) = thunderstorm observation at t+1 hour
+target_2h(t) = thunderstorm observation at t+2 hours
+target_3h(t) = thunderstorm observation at t+3 hours
+
+Missing future observations are NaN and MUST NOT become negative labels.
+
+GOAL:
+Train and evaluate genuine thunderstorm nowcasting models for all three lead times.
+
+MODEL:
+RandomForestClassifier
+- n_estimators=400
+- class_weight="balanced"
+- random_state=42
+- n_jobs=-1
+
+FEATURES:
+Use exactly the 28 Phase 4 model features.
+Do NOT use:
+- thunderstorm_label
+- target_1h/2h/3h
+- target observation flags
+- weather_code
+- future precipitation
+- any future atmospheric variable
+- any target-derived feature
+
+DATA:
+For each lead time separately:
+- drop rows where that target is NaN
+- retain all valid genuine positive/negative observations
+
+SPLIT:
+STRICT CHRONOLOGICAL:
+- first 70% training
+- next 15% validation
+- final 15% test
+
+Never shuffle.
+
+THRESHOLD:
+Do not automatically use 0.5.
+
+Use ONLY the validation set to select an operational probability threshold.
+Prioritize thunderstorm recall while keeping the false-alert burden meaningful and explicitly documented.
+
+Once selected:
+LOCK the threshold.
+Evaluate the test set using that threshold.
+Do NOT tune using test data.
+
+METRICS:
+For validation and final test calculate:
+- Accuracy
+- Precision
+- Recall
+- F1
+- ROC-AUC
+- PR-AUC / Average Precision
+- confusion matrix
+- base positive rate
+- predicted alert rate
+
+Train separate models for:
+- 1 hour
+- 2 hours
+- 3 hours
+
+SAVE:
+
+models/
+thunderstorm_nowcast_1h.joblib
+thunderstorm_nowcast_2h.joblib
+thunderstorm_nowcast_3h.joblib
+
+outputs/
+thunderstorm_nowcast_1h_evaluation.json
+thunderstorm_nowcast_2h_evaluation.json
+thunderstorm_nowcast_3h_evaluation.json
+
+outputs/
+thunderstorm_nowcast_1h_feature_importance.csv
+thunderstorm_nowcast_2h_feature_importance.csv
+thunderstorm_nowcast_3h_feature_importance.csv
+
+outputs/
+thunderstorm_nowcast_1h_confusion_matrix.png
+thunderstorm_nowcast_2h_confusion_matrix.png
+thunderstorm_nowcast_3h_confusion_matrix.png
+
+outputs/
+thunderstorm_nowcast_model_comparison.json
+outputs/PHASE6_MODEL_TRAINING_REPORT.md
+
+Also save appropriate metadata for each trained model.
+
+The metadata must contain:
+- lead time
+- target
+- feature names
+- feature count
+- model parameters
+- train/validation/test date ranges
+- train/validation/test counts
+- positive/negative counts
+- selected validation threshold
+- validation metrics
+- final test metrics
+- random seed
+- input dataset checksum
+- scientific limitations/disclaimer
+
+MODEL SELECTION:
+Compare 1h, 2h and 3h.
+
+Select a primary operational lead time using:
+1. thunderstorm recall
+2. precision/F1
+3. PR-AUC
+4. ROC-AUC
+5. usable sample/event availability
+6. practical nowcasting usefulness
+
+Do NOT select using accuracy alone.
+
+IMPORTANT:
+The event is rare. A low precision at a recall-oriented threshold is scientifically possible.
+Do not hide this.
+Do not call accuracy "model confidence".
+Do not inflate or manipulate metrics.
+
+INDEPENDENT VALIDATION:
+
+Create:
+outputs/verify_phase6_models.py
+
+Independently verify:
+- all three models load
+- Random Forest configuration
+- exactly 28 features
+- feature names match
+- targets are correct
+- chronological split
+- no target leakage
+- no NaN/inf in X
+- threshold selection uses validation only
+- test metrics reproduce
+- output artifacts exist
+- Phase 1–5 files remain unchanged
+
+Run the validator.
+
+IMPORTANT TAKEOVER RULE:
+There may already be partial Phase 6 files from the previous AI.
+
+First inspect them.
+If they are incomplete, repair/recreate them as necessary.
+Do not blindly trust them.
+
+If complete valid artifacts already exist, verify them rather than unnecessarily retraining.
+If training artifacts are missing/incomplete, train the missing models.
+
+Do NOT modify:
+- Phase 1 datasets
+- Phase 1 model
+- Phase 2 labels
+- Phase 3 synchronized dataset
+- Phase 4 feature dataset
+- Phase 5 nowcast target dataset
+- Flask/backend/frontend/dashboard
+
+Do NOT start Phase 7.
+
+At completion report:
+1. what Phase 6 artifacts were already present
+2. what was missing/incomplete
+3. what was trained/rebuilt
+4. final 1h metrics
+5. final 2h metrics
+6. final 3h metrics
+7. selected lead time
+8. selected threshold
+9. top 10 features
+10. independent validation result
+11. protected-file integrity
+12. final git status
+
+STOP after Phase 6.
+DO NOT COMMIT.
+DO NOT PUSH.Manual Record
 ```
 
 into:
