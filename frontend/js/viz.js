@@ -1,4 +1,3 @@
-const CIRC = 2 * Math.PI * 42;
 const ORDER = ["HEALTHY", "DAMAGED", "ROTTEN", "SPROUTED"];
 
 export function countUp(el, to, dur = 500) {
@@ -12,35 +11,55 @@ export function countUp(el, to, dur = 500) {
   requestAnimationFrame(tick);
 }
 
-export function setDonut(goodPct) {
-  const arc = document.getElementById("donut-good");
-  if (!arc) return;
-  const g = Number(goodPct);
-  const frac = Number.isFinite(g) ? Math.max(0, Math.min(100, g)) / 100 : 0;
-  arc.style.strokeDasharray = `${frac * CIRC} ${CIRC}`;
+export function setDonut(goodPct, badPct, revPct) {
+  const g = Number.isFinite(Number(goodPct)) ? Math.max(0, Number(goodPct)) : 0;
+  const b = Number.isFinite(Number(badPct)) ? Math.max(0, Number(badPct)) : 0;
+  const r = Number.isFinite(Number(revPct)) ? Math.max(0, Number(revPct)) : 0;
+  const apply = (el, len, off) => {
+    if (!el) return;
+    el.style.strokeDasharray = `${len} 100`;
+    el.style.strokeDashoffset = String(-off);
+  };
+  apply(document.getElementById("donut-good"), g, 0);
+  apply(document.getElementById("donut-bad"), b, g);
+  apply(document.getElementById("donut-rev"), r, g + b);
 }
 
 export function breakdown(onions, apiBreakdown) {
   const b = { HEALTHY: 0, DAMAGED: 0, ROTTEN: 0, SPROUTED: 0 };
-  if (apiBreakdown && typeof apiBreakdown === "object") {
-    for (const k of ORDER) b[k] = Number(apiBreakdown[k]) || 0;
+  const list = onions || [];
+  if (list.length) {
+    for (const o of list) {
+      const n = String(o.class_name || o.class || "").toUpperCase();
+      if (n in b) b[n] += 1;
+    }
     return b;
   }
-  for (const o of onions || []) {
-    const n = String(o.class_name || "").toUpperCase();
-    if (n in b) b[n] += 1;
+  if (apiBreakdown && typeof apiBreakdown === "object") {
+    for (const k of ORDER) b[k] = Number(apiBreakdown[k]) || 0;
   }
   return b;
 }
 
-export function renderBars(el, b) {
+export function renderBars(el, b, hasInspection) {
   if (!el) return;
-  const total = ORDER.reduce((s, k) => s + (b[k] || 0), 0) || 1;
+  const counts = b || { HEALTHY: 0, DAMAGED: 0, ROTTEN: 0, SPROUTED: 0 };
+  const listLen = Array.isArray(hasInspection) ? hasInspection.length : null;
+  const showRows = listLen != null ? listLen > 0 : !!hasInspection;
+  if (!showRows) {
+    el.innerHTML = `<p class="hint bars-empty">No inspection data yet.</p>`;
+    return;
+  }
+  const max = Math.max(0, ...ORDER.map((k) => counts[k] || 0));
   el.innerHTML = ORDER.map((k) => {
-    const n = b[k] || 0;
-    const w = Math.round((n / total) * 100);
-    return `<div class="bar-row"><span>${k}</span><span><i style="width:${w}%"></i></span><span>${n}</span></div>`;
+    const n = counts[k] || 0;
+    return `<div class="bar-row bar-${k.toLowerCase()}"><span>${k}</span><span class="bar-track"><i data-w="${max ? (n / max) * 100 : 0}"></i></span><span>${n}</span></div>`;
   }).join("");
+  requestAnimationFrame(() => {
+    el.querySelectorAll(".bar-row i").forEach((i) => {
+      i.style.width = `${Number(i.dataset.w) || 0}%`;
+    });
+  });
 }
 
 export function drawOverlayBoxes(canvas, source, onions, selectedIdx) {
@@ -72,9 +91,10 @@ export function drawOverlayBoxes(canvas, source, onions, selectedIdx) {
     ctx.lineWidth = i === selectedIdx ? 4 : 2;
     ctx.strokeRect(x, y, bw, bh);
     const id = "ON-" + String(o.onion_number ?? i + 1).padStart(3, "0");
-    const pct = o.confidence == null ? "" : ` ${Math.round(Number(o.confidence) * 100)}%`;
-    const label = `${id} | ${o.class_name} ${o.grade}${pct}`;
-    ctx.font = "12px Segoe UI";
+    const pct = o.confidence == null ? "" : `${Math.round(Number(o.confidence) * 100)}%`;
+    const decision = review ? "REVIEW REQUIRED" : o.grade || "";
+    const label = `${o.class_name || ""} ${pct}  ${decision}`;
+    ctx.font = "11px Segoe UI";
     const tw = ctx.measureText(label).width + 8;
     ctx.fillStyle = ctx.strokeStyle;
     ctx.fillRect(x, Math.max(0, y - 18), tw, 18);
@@ -113,9 +133,10 @@ export function drawDetections(canvas, img, onions, selectedIdx, onSelect) {
     ctx.globalAlpha = 0.95;
     ctx.strokeRect(x, y, bw, bh);
     const id = "ON-" + String(o.onion_number ?? i + 1).padStart(3, "0");
-    const pct = o.confidence == null ? "" : ` ${Math.round(Number(o.confidence) * 100)}%`;
-    const label = `${id} | ${o.class_name} ${o.grade}${pct}`;
-    ctx.font = "12px Segoe UI";
+    const pct = o.confidence == null ? "" : `${Math.round(Number(o.confidence) * 100)}%`;
+    const decision = review ? "REVIEW REQUIRED" : o.grade || "";
+    const label = `${o.class_name || ""} ${pct}  ${decision}`;
+    ctx.font = "11px Segoe UI";
     const tw = ctx.measureText(label).width + 8;
     ctx.fillStyle = ctx.strokeStyle;
     ctx.fillRect(x, Math.max(0, y - 18), tw, 18);
